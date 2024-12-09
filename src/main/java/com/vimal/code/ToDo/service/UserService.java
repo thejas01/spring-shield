@@ -10,5 +10,7 @@ import java.util.List;
 public interface UserService extends UserDetailsService {
     List<UserResponseDto> getAllUser();
     public UserResponseDto createUser(UserRequestDto userRequestDto);
+    void deleteUser(String email);
+   
 
 }

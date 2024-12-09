@@ -69,6 +69,25 @@ public class AuthController {
         return new ResponseEntity<>(jwtResponse, HttpStatus.OK);
     }
 
+    @GetMapping("/logout")
+    public ResponseEntity<String> logout() {
+        SecurityContextHolder.clearContext();
+        return new ResponseEntity<>("Logged out successfully", HttpStatus.OK);
+    }
+    @DeleteMapping("/delete")
+    public ResponseEntity<String> deleteUser(@RequestParam String email) {
+
+        try{
+            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+        this.doAuthenticate(email, email);
+        userService.deleteUser(email);
+        return new ResponseEntity<>("User deleted successfully", HttpStatus.OK);
+        }
+        catch (BadCredentialsException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("User not found: " + ex.getMessage());
+        }
+    }
+
     private void doAuthenticate(String email, String password) {
         System.out.println("Login Info");
         System.out.println(email);

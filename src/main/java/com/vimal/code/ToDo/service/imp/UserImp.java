@@ -62,6 +62,18 @@ public class UserImp implements UserService {
         }
     }
 
+    @Override
+    public void deleteUser(String email) {
+        UserEnitiy user = userRepo.findByEmail(email).orElseThrow(()->new RuntimeException("User not found"));
+        userRepo.delete(user);
+    }
+
+    public UserEnitiy getUserById(Long id){
+        return userRepo.findById(id).orElseThrow(()->new RuntimeException("User not found"));
+    }
+
+    
+
 
     public UserEnitiy userReqDtoToUserEntity(UserRequestDto userReqDto){
         UserEnitiy user = this.modelMapper.map(userReqDto,UserEnitiy.class);
