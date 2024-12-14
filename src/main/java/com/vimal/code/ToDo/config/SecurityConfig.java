@@ -33,6 +33,7 @@ public class SecurityConfig {
                         requestMatchers("/home").permitAll().
                         requestMatchers("/auth/login").permitAll().
                         requestMatchers("/auth/create").permitAll().
+                        requestMatchers("/auth/delete").permitAll().
                         anyRequest().authenticated())
                 .exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(jwtAuthenticationEntryPoint)) // if any exception came
                 .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // nothing to save on server
