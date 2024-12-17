@@ -3,10 +3,12 @@ package com.vimal.code.ToDo.controllers;
 import com.vimal.code.ToDo.Auth.JwtHelper;
 import com.vimal.code.ToDo.config.AuthConfig;
 import com.vimal.code.ToDo.dto.req.JwtRequest;
+import com.vimal.code.ToDo.dto.req.RefreshTokenRequest;
 import com.vimal.code.ToDo.dto.req.UserRequestDto;
 import com.vimal.code.ToDo.dto.resp.JwtResponse;
 import com.vimal.code.ToDo.dto.resp.UserResponseDto;
 import com.vimal.code.ToDo.exp.UserAlreadyExistsException;
+import com.vimal.code.ToDo.service.RefreshTokenService;
 import com.vimal.code.ToDo.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +42,9 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-
+   @Autowired
+    private RefreshTokenService refreshTokenService;
+    
     @PostMapping("/create")
     public ResponseEntity<JwtResponse> createUser(@RequestBody UserRequestDto userRequestDto) {
         try {
@@ -55,7 +59,7 @@ public class AuthController {
             return new ResponseEntity<>(jwtResponse, HttpStatus.CREATED);
         } catch (UserAlreadyExistsException ex) {
             // Handle the exception and return an appropriate response
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(new JwtResponse("User already exists: " + ex.getMessage()));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new JwtResponse("User already exists: " + ex.getMessage(), null));
         }
     }
 
@@ -65,7 +69,8 @@ public class AuthController {
         this.doAuthenticate(jwtRequest.getEmail(), jwtRequest.getPassword());
         UserDetails userDetails = userDetailsService.loadUserByUsername(jwtRequest.getEmail());
         String token = this.helper.generateToken(userDetails);
-        JwtResponse jwtResponse = JwtResponse.builder().token(token).build();
+        String refreshToken = refreshTokenService.createRefreshToken(jwtRequest.getEmail());
+        JwtResponse jwtResponse = JwtResponse.builder().token(token) .refreshToken(refreshToken).build();
         return new ResponseEntity<>(jwtResponse, HttpStatus.OK);
     }
 
@@ -87,6 +92,22 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("User not found: " + ex.getMessage());
         }
     }
+    @PostMapping("/refresh-token")
+    public ResponseEntity<JwtResponse> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
+        String email = refreshTokenService.validateRefreshToken(refreshTokenRequest.getRefreshToken());
+        if (email != null) {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+            String newAccessToken = helper.generateToken(userDetails);
+            JwtResponse jwtResponse = JwtResponse.builder()
+                    .token(newAccessToken)
+                    .refreshToken(refreshTokenRequest.getRefreshToken())
+                    .build();
+            return ResponseEntity.ok(jwtResponse);
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new JwtResponse("Invalid Refresh Token", email));
+        }
+    }
+    
 
     private void doAuthenticate(String email, String password) {
         System.out.println("Login Info");
